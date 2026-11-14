@@ -4,6 +4,7 @@ const assert = require("assert");
 const { validateRecords } = require("../src/validation");
 const { calculateRevenueMetrics } = require("../src/revenue");
 
+// Create sample sales record
 function createRecord(overrides = {}) {
     return {
         OrderID: "ORD001",
@@ -16,6 +17,7 @@ function createRecord(overrides = {}) {
     };
 }
 
+// Test execution function
 function runTest(name, testFunction) {
     try {
         testFunction();
@@ -29,7 +31,10 @@ function runTest(name, testFunction) {
 
 // TEST 1: Normal valid order
 runTest("Normal order", () => {
-    const result = validateRecords([createRecord()]);
+    const result = validateRecords([
+        createRecord()
+    ]);
+
     assert.strictEqual(result.validRecords.length, 1);
     assert.strictEqual(result.invalidRecords.length, 0);
 });
@@ -39,6 +44,7 @@ runTest("Zero quantity", () => {
     const result = validateRecords([
         createRecord({ Quantity: "0" })
     ]);
+
     assert.strictEqual(result.invalidRecords.length, 1);
 });
 
@@ -47,6 +53,7 @@ runTest("Negative unit price", () => {
     const result = validateRecords([
         createRecord({ UnitPrice: "-100" })
     ]);
+
     assert.strictEqual(result.invalidRecords.length, 1);
 });
 
@@ -55,6 +62,7 @@ runTest("Missing product name", () => {
     const result = validateRecords([
         createRecord({ ProductName: "" })
     ]);
+
     assert.strictEqual(result.invalidRecords.length, 1);
 });
 
@@ -64,10 +72,11 @@ runTest("Duplicate Order ID", () => {
         createRecord(),
         createRecord({ ProductName: "Mouse" })
     ]);
+
     assert.strictEqual(result.invalidRecords.length, 2);
 });
 
-// TEST 6: Unit cost greater than unit price
+// TEST 6: Unit cost greater than selling price
 runTest("Cost greater than selling price", () => {
     const result = validateRecords([
         createRecord({
@@ -78,9 +87,14 @@ runTest("Cost greater than selling price", () => {
 
     assert.strictEqual(result.validRecords.length, 1);
 
-    const metrics = calculateRevenueMetrics(result.validRecords);
+    const metrics = calculateRevenueMetrics(
+        result.validRecords
+    );
 
-    assert.strictEqual(metrics.estimatedGrossProfit, -600);
+    assert.strictEqual(
+        metrics.estimatedGrossProfit,
+        -600
+    );
 });
 
 // TEST 7: No valid orders

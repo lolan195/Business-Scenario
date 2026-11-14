@@ -3,43 +3,43 @@
  * ==========================================
  * SALESPULSE - MAIN APPLICATION
  * ==========================================
- * Connects all four modules:
+ * Team Project: Sales Analytics
+ *
+ * Modules:
  * 1. Data Validation
  * 2. Revenue Metrics
  * 3. Product Analysis
  * 4. Regional Analysis
+ * ==========================================
  */
 
 const fs = require("fs");
 const path = require("path");
 
-// Import project modules
+// Import modules
 const { validateRecords } = require("./validation");
 const { calculateRevenueMetrics } = require("./revenue");
 const { analyzeProducts } = require("./product-analysis");
 const { analyzeRegions } = require("./region-analysis");
 
-// ------------------------------------------
-// STEP 1: FIND THE DATASET
-// ------------------------------------------
+// ==========================================
+// STEP 1: DATASET LOCATION
+// ==========================================
 
-const possiblePaths = [
-    path.join(__dirname, "..", "data", "SalesPulse Challenge Dataset.csv"),
-    path.join(__dirname, "..", "SalesPulse Challenge Dataset.csv")
-];
+const filePath = path.join(
+    __dirname,
+    "..",
+    "data",
+    "sales.csv"
+);
 
-const filePath = possiblePaths.find(file => fs.existsSync(file));
-
-if (!filePath) {
-    throw new Error(
-        "Dataset not found. Place SalesPulse Challenge Dataset.csv inside the data folder or project root."
-    );
+if (!fs.existsSync(filePath)) {
+    throw new Error("Dataset not found: data/sales.csv");
 }
 
-// ------------------------------------------
+// ==========================================
 // STEP 2: CSV PARSER
-// Supports quoted values and commas in fields
-// ------------------------------------------
+// ==========================================
 
 function parseCSV(content) {
     const rows = [];
@@ -81,7 +81,6 @@ function parseCSV(content) {
         }
     }
 
-    // Add the final field and row
     row.push(field);
 
     if (row.some(value => value.trim() !== "")) {
@@ -89,7 +88,7 @@ function parseCSV(content) {
     }
 
     if (insideQuotes) {
-        throw new Error("CSV file contains an unclosed quoted field.");
+        throw new Error("CSV contains an unclosed quoted field.");
     }
 
     if (rows.length === 0) {
@@ -100,10 +99,18 @@ function parseCSV(content) {
         header.trim().replace(/^\uFEFF/, "")
     );
 
+    if (headers.some(header => !header)) {
+        throw new Error("CSV contains an empty column heading.");
+    }
+
+    if (new Set(headers).size !== headers.length) {
+        throw new Error("CSV contains duplicate column headings.");
+    }
+
     return rows.slice(1).map((values, index) => {
         if (values.length !== headers.length) {
             throw new Error(
-                `CSV row ${index + 2} has ${values.length} columns; expected ${headers.length}.`
+                `CSV row ${index + 2} has an incorrect number of columns.`
             );
         }
 
@@ -117,23 +124,21 @@ function parseCSV(content) {
     });
 }
 
-// ------------------------------------------
-// STEP 3: CSV OUTPUT HELPER
-// ------------------------------------------
+// ==========================================
+// STEP 3: CSV EXPORT FUNCTION
+// ==========================================
 
 function convertToCSV(records) {
-    if (!records.length) {
+    if (records.length === 0) {
         return "";
     }
 
     const headers = Object.keys(records[0]);
 
     function escapeCSV(value) {
-        if (Array.isArray(value)) {
-            value = value.join("; ");
-        }
-
-        const text = String(value ?? "");
+        const text = Array.isArray(value)
+            ? value.join("; ")
+            : String(value ?? "");
 
         if (/[",\n\r]/.test(text)) {
             return `"${text.replace(/"/g, '""')}"`;
@@ -142,103 +147,118 @@ function convertToCSV(records) {
         return text;
     }
 
-    const lines = [
-        headers.map(escapeCSV).join(","),
-        ...records.map(record =>
-            headers.map(header => escapeCSV(record[header])).join(",")
-        )
-    ];
+    const lines = [];
+
+    lines.push(headers.map(escapeCSV).join(","));
+
+    records.forEach(record => {
+        lines.push(
+            headers.map(header =>
+                escapeCSV(record[header])
+            ).join(",")
+        );
+    });
 
     return lines.join("\n");
 }
 
-// ------------------------------------------
-// STEP 4: READ THE DATASET
-// ------------------------------------------
+// ==========================================
+// STEP 4: MAIN APPLICATION
+// ==========================================
 
 function runSalesPulse() {
-    console.log("\n==================================");
-    console.log("       SALESPULSE ANALYTICS");
-    console.log("==================================\n");
 
+    console.log("\n======================================");
+    console.log("       SALESPULSE ANALYTICS");
+    console.log("======================================");
+
+    // Read dataset
     const csvContent = fs.readFileSync(filePath, "utf8");
     const rawRecords = parseCSV(csvContent);
 
-    console.log("Dataset loaded successfully.");
+    console.log("\nDataset loaded successfully.");
     console.log("Total raw records:", rawRecords.length);
 
-    // --------------------------------------
+    // ======================================
     // STEP 5: DATA VALIDATION
-    // --------------------------------------
+    // ======================================
+
+    console.log("\n========== DATA VALIDATION ==========");
 
     const validationResults = validateRecords(rawRecords);
 
     const validRecords = validationResults.validRecords;
     const invalidRecords = validationResults.invalidRecords;
-    const validationSummary = validationResults.validationSummary;
+    const summary = validationResults.validationSummary;
 
-    console.log("\n========== DATA VALIDATION ==========");
-    console.log("Total records:", validationSummary.totalRecords);
-    console.log("Valid records:", validationSummary.validRecords);
-    console.log("Invalid records:", validationSummary.invalidRecords);
+    console.log("Total records:", summary.totalRecords);
+    console.log("Valid records:", summary.validRecords);
+    console.log("Invalid records:", summary.invalidRecords);
 
-    console.log("\nValidation errors:");
-    console.table(validationSummary.reasonCounts);
+    console.log("\nValidation error counts:");
 
-    // --------------------------------------
+    console.table(
+        Object.entries(summary.reasonCounts).map(
+            ([reason, count]) => ({
+                Reason: reason,
+                Count: count
+            })
+        )
+    );
+
+    // ======================================
     // STEP 6: REVENUE METRICS
-    // --------------------------------------
+    // ======================================
+
+    console.log("\n========== REVENUE METRICS ==========");
 
     const revenueResults =
         calculateRevenueMetrics(validRecords);
 
-    console.log("\n========== REVENUE METRICS ==========");
     console.table([revenueResults]);
 
-    // --------------------------------------
+    // ======================================
     // STEP 7: PRODUCT ANALYSIS
-    // --------------------------------------
+    // ======================================
+
+    console.log("\n========== PRODUCT ANALYSIS ==========");
 
     const productResults =
         analyzeProducts(validRecords);
 
-    console.log("\n========== PRODUCT ANALYSIS ==========");
-
-    console.log("\nProduct-wise performance:");
+    console.log("\nProduct-wise revenue and quantity:");
     console.table(productResults.products);
 
     console.log("\nTop 5 products by revenue:");
     console.table(productResults.topFive);
 
-    console.log("\nProduct with highest quantity sold:");
-    console.table(
-        productResults.highestQuantity
-            ? [productResults.highestQuantity]
-            : []
-    );
+    console.log("\nProducts with highest quantity sold:");
 
-    // --------------------------------------
+    console.table(productResults.highestQuantityProducts);
+
+    // ======================================
     // STEP 8: REGIONAL ANALYSIS
-    // --------------------------------------
+    // ======================================
+
+    console.log("\n========== REGIONAL ANALYSIS ==========");
 
     const regionResults =
         analyzeRegions(validRecords);
-
-    console.log("\n========== REGIONAL ANALYSIS ==========");
 
     console.log("\nRegion-wise performance:");
     console.table(regionResults.regions);
 
     console.log("\nHighest revenue region:");
+
     console.table(
         regionResults.highestRevenueRegion
             ? [regionResults.highestRevenueRegion]
             : []
     );
 
-    // --------------------------------------
+    // ======================================
     // STEP 9: CREATE REPORT FOLDER
-    // --------------------------------------
+    // ======================================
 
     const reportFolder = path.join(
         __dirname,
@@ -248,128 +268,145 @@ function runSalesPulse() {
 
     fs.mkdirSync(reportFolder, { recursive: true });
 
-    // Save invalid records
+    // ======================================
+    // STEP 10: SAVE OUTPUT FILES
+    // ======================================
+
     fs.writeFileSync(
         path.join(reportFolder, "invalid-records.csv"),
         convertToCSV(invalidRecords)
     );
 
-    // Save product analysis
     fs.writeFileSync(
         path.join(reportFolder, "product-wise-revenue.csv"),
         convertToCSV(productResults.products)
     );
 
-    // Save regional analysis
     fs.writeFileSync(
         path.join(reportFolder, "region-wise-analysis.csv"),
         convertToCSV(regionResults.regions)
     );
 
-    // Save top five products
     fs.writeFileSync(
         path.join(reportFolder, "top-five-products.json"),
         JSON.stringify(productResults.topFive, null, 4)
     );
 
-    // Save validation summary
     fs.writeFileSync(
         path.join(reportFolder, "validation-summary.json"),
-        JSON.stringify(validationSummary, null, 4)
+        JSON.stringify(summary, null, 4)
     );
 
-    // --------------------------------------
-    // STEP 10: GENERATE INSIGHTS
-    // --------------------------------------
+    // ======================================
+    // STEP 11: BUSINESS INSIGHTS
+    // ======================================
 
     const insights = [];
     const recommendations = [];
 
+    // Highest revenue product
     if (productResults.topFive.length > 0) {
         const topProduct = productResults.topFive[0];
 
         insights.push(
-            `The highest-revenue product is ${topProduct.ProductName}, generating ${topProduct.TotalRevenue.toFixed(2)} in revenue.`
+            `${topProduct.ProductName} generates the highest product revenue of ${topProduct.TotalRevenue.toFixed(2)}.`
         );
 
         recommendations.push(
-            `Review the performance and availability of ${topProduct.ProductName} to identify opportunities to maintain or increase its sales.`
+            `Monitor the stock and sales performance of ${topProduct.ProductName}.`
         );
     }
 
-    if (productResults.highestQuantity) {
-        const popularProduct = productResults.highestQuantity;
+    // Highest quantity products (including ties)
+    if (productResults.highestQuantityProducts.length > 0) {
+        const popularProducts =
+            productResults.highestQuantityProducts
+                .map(product => product.ProductName)
+                .join(" and ");
+
+        const maxQuantity =
+            productResults.highestQuantityProducts[0].TotalQuantity;
 
         insights.push(
-            `${popularProduct.ProductName} has the highest total quantity sold, with ${popularProduct.TotalQuantity} units.`
+            `${popularProducts} have the highest quantity sold, with ${maxQuantity} units each.`
         );
     }
 
+    // Highest revenue region
     if (regionResults.highestRevenueRegion) {
         const topRegion = regionResults.highestRevenueRegion;
 
         insights.push(
-            `${topRegion.Region} is the highest-revenue region, generating ${topRegion.TotalRevenue.toFixed(2)}.`
+            `${topRegion.Region} is the highest revenue region with ${topRegion.TotalRevenue.toFixed(2)} revenue.`
         );
 
         recommendations.push(
-            `Study the sales performance in ${topRegion.Region} and identify successful practices that could be applied to other regions.`
+            `Study the successful sales practices in ${topRegion.Region} and apply suitable strategies to other regions.`
         );
     }
 
-    const lossMakingRegions = regionResults.regions.filter(
+    // Loss-making regions
+    const lossRegions = regionResults.regions.filter(
         region => region.EstimatedGrossProfit < 0
     );
 
-    if (lossMakingRegions.length > 0) {
+    if (lossRegions.length > 0) {
         insights.push(
-            `${lossMakingRegions.length} region(s) have negative estimated gross profit.`
+            `${lossRegions.length} region(s) have negative estimated gross profit.`
         );
 
         recommendations.push(
-            "Investigate loss-making regions and review product costs, pricing and sales mix."
+            "Review pricing, costs and product mix in loss-making regions."
         );
     }
 
+    // Data quality recommendation
     if (invalidRecords.length > 0) {
         recommendations.push(
-            "Improve data entry checks to reduce missing fields, invalid values and duplicate Order IDs."
+            "Improve data entry checks to reduce missing values, invalid records and duplicate Order IDs."
         );
     }
 
-    // Ensure at least three insights where possible
+    // Ensure at least three insights
     if (insights.length < 3) {
         insights.push(
-            `The dataset contains ${validRecords.length} valid orders and ${invalidRecords.length} invalid records.`
+            `The dataset contains ${validRecords.length} valid orders out of ${rawRecords.length} total records.`
         );
     }
 
     if (insights.length < 3) {
         insights.push(
-            `Total quantity sold across valid orders is ${revenueResults.totalQuantitySold}.`
+            `The total quantity sold is ${revenueResults.totalQuantitySold} units.`
         );
     }
 
-    // --------------------------------------
-    // STEP 11: GENERATE FINAL REPORT
-    // --------------------------------------
+    // Ensure at least two recommendations
+    if (recommendations.length < 2) {
+        recommendations.push(
+            "Continue monitoring revenue, gross profit and regional sales performance regularly."
+        );
+    }
 
-    const report = `
+    // ======================================
+    // STEP 12: FINAL REPORT
+    // ======================================
+
+    const finalReport = `
 # SALESPULSE - FINAL SALES ANALYTICS REPORT
 
-## 1. Data Quality Summary
+## 1. DATA QUALITY SUMMARY
 
-- Total records: ${validationSummary.totalRecords}
-- Valid records: ${validationSummary.validRecords}
-- Invalid records: ${validationSummary.invalidRecords}
+- Total Records: ${summary.totalRecords}
+- Valid Records: ${summary.validRecords}
+- Invalid Records: ${summary.invalidRecords}
 
 ### Validation Error Counts
 
-${Object.entries(validationSummary.reasonCounts)
+${Object.entries(summary.reasonCounts)
     .map(([reason, count]) => `- ${reason}: ${count}`)
     .join("\n") || "- No validation errors found."}
 
-## 2. Overall Revenue Metrics
+## 2. REVENUE METRICS
 
 - Total Revenue: ${revenueResults.totalRevenue.toFixed(2)}
 - Total Valid Orders: ${revenueResults.totalValidOrders}
@@ -377,21 +414,23 @@ ${Object.entries(validationSummary.reasonCounts)
 - Total Quantity Sold: ${revenueResults.totalQuantitySold}
 - Estimated Gross Profit: ${revenueResults.estimatedGrossProfit.toFixed(2)}
 
-## 3. Product Analysis
+## 3. PRODUCT ANALYSIS
 
 ### Top 5 Products by Revenue
 
 ${productResults.topFive.map((product, index) =>
     `${index + 1}. ${product.ProductName} - Revenue: ${product.TotalRevenue.toFixed(2)}, Quantity: ${product.TotalQuantity}`
-).join("\n") || "No valid product records."}
+).join("\n") || "No product data available."}
 
-### Highest Quantity Product
+### Highest Quantity Products
 
-${productResults.highestQuantity
-    ? `${productResults.highestQuantity.ProductName} - ${productResults.highestQuantity.TotalQuantity} units`
+${productResults.highestQuantityProducts.length > 0
+    ? productResults.highestQuantityProducts.map(product =>
+        `${product.ProductName} - ${product.TotalQuantity} units`
+    ).join("\n")
     : "No product data available."}
 
-## 4. Regional Analysis
+## 4. REGIONAL ANALYSIS
 
 ${regionResults.regions.map(region =>
     `- ${region.Region}: Revenue ${region.TotalRevenue.toFixed(2)}, Estimated Gross Profit ${region.EstimatedGrossProfit.toFixed(2)}, Orders ${region.TotalOrders}`
@@ -403,52 +442,56 @@ ${regionResults.highestRevenueRegion
     ? regionResults.highestRevenueRegion.Region
     : "No regional data available."}
 
-## 5. Key Business Insights
+## 5. BUSINESS INSIGHTS
 
-${insights.map((insight, index) =>
-    `${index + 1}. ${insight}`
+${insights.map((item, index) =>
+    `${index + 1}. ${item}`
 ).join("\n")}
 
-## 6. Recommendations
+## 6. RECOMMENDATIONS
 
-${recommendations.map((recommendation, index) =>
-    `${index + 1}. ${recommendation}`
+${recommendations.map((item, index) =>
+    `${index + 1}. ${item}`
 ).join("\n")}
 
 ---
 
-Report generated by the SalesPulse Analytics Application.
+Report generated by SalesPulse Analytics.
 `;
 
     fs.writeFileSync(
         path.join(reportFolder, "final-report.md"),
-        report.trim()
+        finalReport.trim()
     );
 
-    // --------------------------------------
-    // STEP 12: COMPLETION MESSAGE
-    // --------------------------------------
+    // ======================================
+    // STEP 13: COMPLETION
+    // ======================================
 
-    console.log("\n==================================");
-    console.log(" SALESPULSE ANALYSIS COMPLETED");
-    console.log("==================================");
+    console.log("\n======================================");
+    console.log("   SALESPULSE ANALYSIS COMPLETED");
+    console.log("======================================");
 
-    console.log("\nReports saved inside the reports folder:");
-    console.log("- invalid-records.csv");
-    console.log("- product-wise-revenue.csv");
-    console.log("- region-wise-analysis.csv");
-    console.log("- top-five-products.json");
-    console.log("- validation-summary.json");
-    console.log("- final-report.md");
+    console.log("\nGenerated reports:");
 
-    console.log("\nAll modules executed successfully!");
+    console.log("1. invalid-records.csv");
+    console.log("2. product-wise-revenue.csv");
+    console.log("3. region-wise-analysis.csv");
+    console.log("4. top-five-products.json");
+    console.log("5. validation-summary.json");
+    console.log("6. final-report.md");
+
+    console.log("\nAll four modules executed successfully!");
 }
 
-// Run application
+// ==========================================
+// RUN APPLICATION
+// ==========================================
+
 try {
     runSalesPulse();
 } catch (error) {
-    console.error("\nSalesPulse execution failed:");
+    console.error("\nSALESPULSE ERROR:");
     console.error(error.message);
     process.exitCode = 1;
 }

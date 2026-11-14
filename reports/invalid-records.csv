@@ -1,0 +1,4 @@
+OrderID,OrderDate,ProductName,Category,Region,Quantity,UnitPrice,UnitCost,ValidationErrors
+ORD0008,2026-10-25,Wireless Mouse,Accessories,North,0,750,350,Zero or negative quantity
+ORD0019,2026-10-09,Router,Networking,West,4,-1200,2300,Zero or negative unit price
+ORD0030,2026-10-31,,Accessories,South,5,1100,700,Missing product name

@@ -1,26 +1,15 @@
 
 /**
  * SalesPulse - Regional Analysis Module
- * --------------------------------------
- * Calculates revenue and gross profit
- * for each sales region.
  */
 
 function analyzeRegions(validRecords) {
     if (!Array.isArray(validRecords)) {
-        throw new Error("Valid records must be provided as an array.");
-    }
-
-    if (validRecords.length === 0) {
-        return {
-            regions: [],
-            highestRevenueRegion: null
-        };
+        throw new Error("Valid records must be an array.");
     }
 
     const regionMap = new Map();
 
-    // Calculate region-wise metrics
     validRecords.forEach(record => {
         const regionName = String(record.Region || "").trim();
 
@@ -29,7 +18,7 @@ function analyzeRegions(validRecords) {
         const unitCost = Number(record.UnitCost);
 
         if (!regionName) {
-            throw new Error("A validated record has a missing region.");
+            throw new Error("Missing region in validated records.");
         }
 
         if (
@@ -37,7 +26,7 @@ function analyzeRegions(validRecords) {
             !Number.isFinite(unitPrice) ||
             !Number.isFinite(unitCost)
         ) {
-            throw new Error(`Invalid numeric data in region: ${regionName}`);
+            throw new Error(`Invalid numeric data in ${regionName}.`);
         }
 
         const revenue = quantity * unitPrice;
@@ -61,10 +50,8 @@ function analyzeRegions(validRecords) {
         region.EstimatedGrossProfit += grossProfit;
     });
 
-    // Convert Map into an array
     const regions = Array.from(regionMap.values());
 
-    // Round financial values
     regions.forEach(region => {
         region.TotalRevenue =
             Number(region.TotalRevenue.toFixed(2));
@@ -73,12 +60,10 @@ function analyzeRegions(validRecords) {
             Number(region.EstimatedGrossProfit.toFixed(2));
     });
 
-    // Sort by revenue (highest first)
     regions.sort(
         (a, b) => b.TotalRevenue - a.TotalRevenue
     );
 
-    // Identify highest-revenue region
     const highestRevenueRegion = regions[0] || null;
 
     return {

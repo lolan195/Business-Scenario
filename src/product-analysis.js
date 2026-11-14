@@ -1,93 +1,77 @@
 
 /**
  * SalesPulse - Product Analysis Module
- * ------------------------------------
- * Analyzes product-wise revenue and quantity.
- * Receives validated records from validation.js.
  */
 
 function analyzeProducts(validRecords) {
-    // Check input
     if (!Array.isArray(validRecords)) {
-        throw new Error("Valid records must be provided as an array.");
-    }
-
-    // Handle empty records
-    if (validRecords.length === 0) {
-        return {
-            products: [],
-            topFive: [],
-            highestQuantity: null
-        };
+        throw new Error("Valid records must be an array.");
     }
 
     const productMap = new Map();
 
-    // Calculate product-wise revenue and quantity
-    validRecords.forEach((item, index) => {
-        const productName = String(item.ProductName || "").trim();
-        const quantity = Number(item.Quantity);
-        const unitPrice = Number(item.UnitPrice);
+    validRecords.forEach(record => {
+        const name = String(record.ProductName || "").trim();
+        const quantity = Number(record.Quantity);
+        const price = Number(record.UnitPrice);
 
-        // Validated records should contain a product name
-        if (!productName) {
-            throw new Error(
-                `Missing product name in validated record at index ${index}.`
-            );
+        if (!name) {
+            throw new Error("Missing product name in validated records.");
         }
 
-        if (
-            !Number.isFinite(quantity) ||
-            !Number.isFinite(unitPrice)
-        ) {
-            throw new Error(
-                `Invalid quantity or unit price for product: ${productName}`
-            );
+        if (!Number.isFinite(quantity) || !Number.isFinite(price)) {
+            throw new Error(`Invalid numeric data for ${name}.`);
         }
 
-        const revenue = quantity * unitPrice;
+        const revenue = quantity * price;
 
-        // Create product entry if it does not exist
-        if (!productMap.has(productName)) {
-            productMap.set(productName, {
-                ProductName: productName,
+        if (!productMap.has(name)) {
+            productMap.set(name, {
+                ProductName: name,
                 TotalQuantity: 0,
                 TotalRevenue: 0
             });
         }
 
-        // Update product totals
-        const product = productMap.get(productName);
+        const product = productMap.get(name);
 
         product.TotalQuantity += quantity;
         product.TotalRevenue += revenue;
     });
 
-    // Convert Map into an array
     const products = Array.from(productMap.values());
 
-    // Sort products by revenue (highest first)
+    products.forEach(product => {
+        product.TotalRevenue =
+            Number(product.TotalRevenue.toFixed(2));
+    });
+
+    // Sort by revenue
     products.sort(
         (a, b) => b.TotalRevenue - a.TotalRevenue
     );
 
-    // Get top 5 products by revenue
+    // Top 5 products by revenue
     const topFive = products.slice(0, 5);
 
-    // Find product with the highest quantity sold
-    const highestQuantity = [...products].sort(
-        (a, b) => b.TotalQuantity - a.TotalQuantity
-    )[0] || null;
+    // Find the maximum quantity sold
+    const maxQuantity = products.length > 0
+        ? Math.max(...products.map(p => p.TotalQuantity))
+        : 0;
 
-    // Return results
+    // Include ALL products tied for highest quantity
+    const highestQuantityProducts = products.filter(
+        product => product.TotalQuantity === maxQuantity
+    );
+
     return {
         products,
         topFive,
-        highestQuantity
+        highestQuantityProducts,
+        highestQuantity: highestQuantityProducts[0] || null
     };
 }
 
-// Export function for use in main.js
 module.exports = {
     analyzeProducts
 };

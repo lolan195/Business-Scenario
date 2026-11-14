@@ -1,0 +1,10 @@
+{
+    "totalRecords": 39,
+    "validRecords": 36,
+    "invalidRecords": 3,
+    "reasonCounts": {
+        "Zero or negative quantity": 1,
+        "Zero or negative unit price": 1,
+        "Missing product name": 1
+    }
+}

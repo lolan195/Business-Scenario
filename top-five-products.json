@@ -1,0 +1,27 @@
+[
+  {
+    "ProductName": "Laptop",
+    "TotalQuantity": 26,
+    "TotalRevenue": 1351800
+  },
+  {
+    "ProductName": "Monitor",
+    "TotalQuantity": 35,
+    "TotalRevenue": 297300
+  },
+  {
+    "ProductName": "Office Chair",
+    "TotalQuantity": 28,
+    "TotalRevenue": 217700
+  },
+  {
+    "ProductName": "External SSD",
+    "TotalQuantity": 29,
+    "TotalRevenue": 191600
+  },
+  {
+    "ProductName": "Mechanical Keyboard",
+    "TotalQuantity": 60,
+    "TotalRevenue": 168100
+  }
+]

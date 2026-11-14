@@ -1,0 +1,8 @@
+Validation Issue,Invalid Records
+Missing Order IDs,1
+Zero or Negative Quantities,2
+Zero or Negative Unit Prices,2
+Negative Unit Costs,1
+Missing Product Names,1
+Missing Regions,1
+Duplicate Order IDs,4

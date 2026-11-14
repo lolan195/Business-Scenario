@@ -1,0 +1,13 @@
+OrderID,OrderDate,ProductName,Category,Region,Quantity,UnitPrice,UnitCost,Missing_OrderID,Invalid_Quantity,Invalid_UnitPrice,Negative_UnitCost,Missing_ProductName,Missing_Region,Duplicate_OrderID,Total_Issues
+ORD0008,2026-10-25,Wireless Mouse,Accessories,North,0,750,350,False,True,False,False,False,False,False,1
+ORD0015,2026-10-18,USB Hub,Accessories,North,1,500,350,False,False,False,False,False,False,True,1
+ORD0019,2026-10-09,Router,Networking,West,4,-1200,2300,False,False,True,False,False,False,False,1
+ORD0030,2026-10-31,,Accessories,South,5,1100,700,False,False,False,False,True,False,False,1
+ORD0037,2026-10-16,USB Hub,Accessories,West,5,400,350,False,False,False,False,False,False,True,1
+ORD0042,2026-10-29,Laptop Stand,Accessories,,4,800,400,False,False,False,False,False,True,False,1
+ORD0054,2026-10-05,Keyboard,Accessories,South,1,1200,-300,False,False,False,True,False,False,False,1
+,2026-10-22,Monitor,Electronics,West,4,8300,6500,True,False,False,False,False,False,False,1
+ORD0083,2026-10-30,Webcam,Electronics,West,-2,2300,1400,False,True,False,False,False,False,False,1
+ORD0097,2026-10-14,USB Hub,Accessories,North,4,0,250,False,False,True,False,False,False,False,1
+ORD0015,2026-10-05,Headphones,Electronics,East,5,1800,1100,False,False,False,False,False,False,True,1
+ORD0037,2026-10-21,Laptop,Computers,South,4,52200,44500,False,False,False,False,False,False,True,1
